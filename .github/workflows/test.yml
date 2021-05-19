@@ -9,6 +9,7 @@ on:
 
 jobs:
   build:
+    name: Test Runner CI
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
