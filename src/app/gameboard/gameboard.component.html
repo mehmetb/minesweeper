@@ -1,0 +1,28 @@
+<div class="gameboard">
+  <div class="top-bar">
+    <div class="left-panel">
+      <app-led-digits [value]="0"></app-led-digits>
+    </div>
+
+    <div class="middle">
+      <div
+        class="face"
+        title="New game"
+      >{{smileyFace}}</div>
+    </div>
+
+    <div class="right-panel">
+      <app-led-digits [value]="0"></app-led-digits>
+    </div>
+  </div>
+
+  <div class="row" *ngFor="let row of rows">
+    <div class="col" *ngFor="let cell of row">
+      <app-cell
+        [hasMine]="cell.hasMine"
+        [uncovered]="cell.uncovered"
+        [flagged]="cell.flagged"
+      ></app-cell>
+    </div>
+  </div>
+</div>
