@@ -13,10 +13,8 @@ import { LedDigitsComponent } from './led-digits/led-digits.component';
     CellComponent,
     LedDigitsComponent,
   ],
-  imports: [
-    BrowserModule,
-  ],
+  imports: [BrowserModule],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
