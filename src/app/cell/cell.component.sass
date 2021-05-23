@@ -1,0 +1,25 @@
+.cell
+  width: 16px
+  height: 16px
+  border: 1px solid #222
+
+  &.uncovered
+    background: #666
+
+  &::after
+    position: absolute
+    font-size: 10px
+    display: none
+
+  &.game-over::after
+    display: block
+
+  &.has-mine::after
+    content: '💣'
+
+  &.exploded::after
+    content: '💥'
+
+  &.flagged::after
+    content: '🚩'
+    display: block

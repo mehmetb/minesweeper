@@ -1,0 +1,36 @@
+.gameboard
+  border: 1px solid #999
+  background: #c0c0c0
+  padding: 10px
+  width: fit-content
+
+.top-bar
+  height: 32px
+  border-top: 1px solid #222
+  border-left: 1px solid #222
+  border-bottom: 1px solid #aaa
+  border-right: 1px solid #aaa
+  padding: 3px 5px
+  display: flex
+
+  .left-panel, .right-panel
+    flex: 0
+
+  .middle
+    flex: 1
+    display: flex
+    justify-content: center
+
+.row
+  display: flex
+
+.face
+  width: 24px
+  height: 24px
+  border: 1px solid #000
+  font-size: 20px
+  text-indent: -2.5px
+  line-height: 23px
+  background: #000
+  user-select: none
+  cursor: pointer
