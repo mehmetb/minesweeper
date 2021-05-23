@@ -1,1 +1,25 @@
-<div class="cell"></div>
+<div
+  class="cell"
+  (contextmenu)="preventContextMenu($event)"
+  [ngClass]="{
+    'has-mine': hasMine,
+    'game-over': gameOver,
+    exploded: exploded,
+    flagged: flagged,
+    uncovered: uncovered
+  }"
+>
+  <span
+    *ngIf="numberOfMines > 0 && uncovered"
+    [ngClass]="{
+      one: numberOfMines === 1,
+      two: numberOfMines === 2,
+      three: numberOfMines === 3,
+      four: numberOfMines === 4,
+      five: numberOfMines === 5,
+      six: numberOfMines === 6,
+      seven: numberOfMines === 7,
+      eight: numberOfMines === 8
+    }"
+  >{{ numberOfMines }}</span>
+</div>

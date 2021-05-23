@@ -1,27 +1,32 @@
 <div class="gameboard">
   <div class="top-bar">
     <div class="left-panel">
-      <app-led-digits [value]="0"></app-led-digits>
+      <app-led-digits [value]="hiddenMines"></app-led-digits>
     </div>
 
     <div class="middle">
-      <div
-        class="face"
-        title="New game"
-      >{{smileyFace}}</div>
+      <div class="face" title="New game" (click)="restartGame()">
+        {{ smileyFace }}
+      </div>
     </div>
 
     <div class="right-panel">
-      <app-led-digits [value]="0"></app-led-digits>
+      <app-led-digits [value]="elapsedTime"></app-led-digits>
     </div>
   </div>
 
-  <div class="row" *ngFor="let row of rows">
+  <div class="row" *ngFor="let row of grid">
     <div class="col" *ngFor="let cell of row">
       <app-cell
         [hasMine]="cell.hasMine"
         [uncovered]="cell.uncovered"
+        [numberOfMines]="cell.numberOfMines || 0"
         [flagged]="cell.flagged"
+        [exploded]="cell.exploded"
+        [gameOver]="gameOver"
+        (mousedown)="onMouseDown($event, cell)"
+        (mouseup)="onMouseUp()"
+        (click)="onClickCell(cell)"
       ></app-cell>
     </div>
   </div>
