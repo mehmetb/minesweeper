@@ -2,6 +2,7 @@
   width: 16px
   height: 16px
   border: 1px solid #222
+  position: relative
 
   &.uncovered
     background: #666
@@ -23,3 +24,12 @@
   &.flagged::after
     content: '🚩'
     display: block
+
+  span.cross
+    position: absolute
+    top: 0
+    left: -1px
+    font-size: 12px
+    line-height: 15px
+    z-index: 2
+

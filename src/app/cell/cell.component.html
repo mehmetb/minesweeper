@@ -10,6 +10,7 @@
   }"
 >
   <span
+    class="number"
     *ngIf="numberOfMines > 0 && uncovered"
     [ngClass]="{
       one: numberOfMines === 1,
@@ -22,4 +23,9 @@
       eight: numberOfMines === 8
     }"
   >{{ numberOfMines }}</span>
+
+  <span
+    *ngIf="gameOver && flagged && !hasMine"
+    class="cross"
+  >❌</span>
 </div>
