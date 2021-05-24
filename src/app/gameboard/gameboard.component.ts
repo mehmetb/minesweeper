@@ -73,14 +73,7 @@ export class GameboardComponent implements OnInit {
       const row = [];
 
       for (let j = 0; j < this.width; ++j) {
-        const cell: Cell = {
-          hasMine: false,
-          flagged: false,
-          uncovered: false,
-          exploded: false,
-          row: i,
-          col: j,
-        };
+        const cell = new Cell(i, j);
         row.push(cell);
       }
 
@@ -88,20 +81,15 @@ export class GameboardComponent implements OnInit {
     }
   }
 
-  getCurrentNumberOfMines(): number {
-    return this.grid.reduce((totalMines, row) => {
-      return (
-        totalMines +
-        row.reduce((rowMines, cell) => {
-          return cell.hasMine ? rowMines + 1 : rowMines;
-        }, 0)
-      );
+  getNumberOfPlantedMines(): number {
+    return Array.from(this.getGridCells()).reduce((totalMines, gridCell) => {
+      return gridCell.hasMine ? totalMines + 1 : totalMines;
     }, 0);
   }
 
   plantMines(clickedCell: Cell) {
     const maxMines = this.mines;
-    let currentMines = this.getCurrentNumberOfMines();
+    let currentMines = this.getNumberOfPlantedMines();
 
     if (currentMines === maxMines) {
       return;
@@ -113,7 +101,14 @@ export class GameboardComponent implements OnInit {
       const row = Math.floor(Math.random() * this.height);
       const col = Math.floor(Math.random() * this.width);
       const cell = this.grid[row][col];
-      if (cell !== clickedCell && !adjacentCells.includes(cell) && !cell.hasMine) {
+
+      // the first click of the game is free, we don't plant the clicked cell or
+      // the cells that are adjacent to it
+      if (
+        cell !== clickedCell &&
+        !adjacentCells.includes(cell) &&
+        !cell.hasMine
+      ) {
         cell.hasMine = true;
         currentMines += 1;
       }
@@ -121,10 +116,12 @@ export class GameboardComponent implements OnInit {
 
     // calculate the number of mines in adjacent cells
     for (const cell of this.getGridCells()) {
-      cell.numberOfMines = this.getAdjacentCells(cell)
-        .reduce((totalMines, adjacentCell) => {
+      cell.numberOfMines = this.getAdjacentCells(cell).reduce(
+        (totalMines, adjacentCell) => {
           return adjacentCell.hasMine ? totalMines + 1 : totalMines;
-        }, 0);
+        },
+        0
+      );
     }
   }
 
@@ -188,6 +185,9 @@ export class GameboardComponent implements OnInit {
     this.uncoverCell(cell);
   }
 
+  /**
+   * Keep track of the time (and present it in the LED panel)
+   */
   timeLoop() {
     if (this.startTime instanceof Date && !this.gameOver) {
       const now = new Date();
@@ -199,6 +199,18 @@ export class GameboardComponent implements OnInit {
     window.requestAnimationFrame(() => this.timeLoop());
   }
 
+  /**
+   * Returns the cells around of this cell.
+   * Think of a 9x9 square made up of cells. This cell parameter would be the
+   * center cell of that square and this method would return all the other
+   * cells at the borders.
+   *
+   * If the imaginary 9x9 square overflows the game boundaries then the cells
+   * which are in the boundaries would be returned. For instance, if `cell` is
+   * the top-left corner cell (x0, y0) then 3 cells would be returned: (x1, y0),
+   * (x0, y1) and (x1, y1)
+   * @param cell The cell in the center of an imaginary 9x9 square.
+   */
   getAdjacentCells(cell: Cell): Cell[] {
     // we need a set due to clamping
     const adjacentCells: Set<Cell> = new Set();
@@ -210,8 +222,16 @@ export class GameboardComponent implements OnInit {
           continue;
         }
 
-        const adjacentCellRow = MathHelper.clamp(cell.row + i, 0, this.height - 1);
-        const adjacentCellCol = MathHelper.clamp(cell.col + j, 0, this.width - 1);
+        const adjacentCellRow = MathHelper.clamp(
+          cell.row + i,
+          0,
+          this.height - 1
+        );
+        const adjacentCellCol = MathHelper.clamp(
+          cell.col + j,
+          0,
+          this.width - 1
+        );
         const adjacentCell = this.grid[adjacentCellRow][adjacentCellCol];
         adjacentCells.add(adjacentCell);
       }
@@ -220,42 +240,55 @@ export class GameboardComponent implements OnInit {
     return Array.from(adjacentCells);
   }
 
-  getAdjacentCellsWithNoMines(cell: Cell): Cell[] {
-    const allSafeCells: Set<Cell> = new Set();
+  getAdjacentCellsToUncover(cell: Cell): Cell[] {
+    // if the current cell has 0 mines around then the game simulates a click
+    // for all the adjacent cells (since it is obvious that they aren't mined).
+    const cellsToUncover: Set<Cell> = new Set();
 
+    // the same cell can be the neighbor of multiple cells. in order to prevent
+    // an infinite loop, we keep track which cells we've checked.
     const recursedCells: Set<Cell> = new Set();
     const recurser = (cellToRecurse: Cell) => {
+      // this cell has been checked before, no need to do it again
       if (recursedCells.has(cellToRecurse)) {
         return;
       }
 
       recursedCells.add(cellToRecurse);
 
-      this.getAdjacentCells(cellToRecurse)
-        .forEach((adjacentCell) => {
-          if (!adjacentCell.uncovered) {
-            allSafeCells.add(adjacentCell);
+      this.getAdjacentCells(cellToRecurse).forEach((adjacentCell) => {
+        if (!adjacentCell.uncovered) {
+          cellsToUncover.add(adjacentCell);
 
-            if (adjacentCell.numberOfMines === 0) {
-              recurser(adjacentCell);
-            }
+          // if the adjacent cell also has 0 mines, then we'll have to perform
+          // the same operation for that cell too!
+          if (adjacentCell.numberOfMines === 0) {
+            recurser(adjacentCell);
           }
-        });
+        }
+      });
     };
 
+    // begin the process by looking up the originally clicked cell (patient 0)
     recurser(cell);
-    return Array.from(allSafeCells);
+    return Array.from(cellsToUncover);
   }
 
   uncoverCell(cell: Cell, autoUncoverNeighbors = true) {
     if (cell.numberOfMines === 0 && autoUncoverNeighbors) {
-      const neighboringCellsToUncover = this.getAdjacentCellsWithNoMines(cell);
-      neighboringCellsToUncover.forEach((neighboringCell) => this.uncoverCell(neighboringCell, false));
+      const neighboringCellsToUncover = this.getAdjacentCellsToUncover(cell);
+      neighboringCellsToUncover.forEach((neighboringCell) =>
+        this.uncoverCell(neighboringCell, false)
+      );
     }
 
     cell.uncovered = true;
 
-    if (autoUncoverNeighbors) {
+    // uncoverCell calls itself recursively. autoUncoverNeighbors is always set to
+    // false for sub-calls. Although there is no harm (other than wasting resources)
+    // of calling checkIfGameIsWon() multiple times, calling it once is enough.
+    const isRootCall = autoUncoverNeighbors;
+    if (isRootCall) {
       this.checkIfGameIsWon();
     }
   }
@@ -264,10 +297,13 @@ export class GameboardComponent implements OnInit {
     const allCells = Array.from(this.getGridCells());
 
     // all cells must be either flagged or uncovered
-    const allUncovered = allCells.every((cell) => cell.flagged || cell.uncovered);
+    const allUncovered = allCells.every(
+      (cell) => cell.flagged || cell.uncovered
+    );
 
     // all flagged cells must have mines
-    const correctFlags = allCells.filter((cell) => cell.flagged)
+    const correctFlags = allCells
+      .filter((cell) => cell.flagged)
       .every((cell) => cell.hasMine);
 
     if (allUncovered && correctFlags) {
